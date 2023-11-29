@@ -45,7 +45,7 @@ def logging(func):
         response = await func(*args, **kwargs)
         response = clean(response)
         print("GOT RESPONSE: ", response)
-        return response
+        return json.loads(response)
     return decorator
 
 def clean(text):
