@@ -12,6 +12,7 @@ import json
 from fastapi import FastAPI
 from llama_cpp import Llama
 from pydantic import BaseModel
+from functools import wraps
 
 class DayAdvice(BaseModel):
     no2: str
@@ -39,8 +40,9 @@ llm = Llama(model_path="./models/mistral-7b-openorca.Q4_K_M.gguf", n_gpu_layers=
 print("Model loaded!")
 
 def logging(func):
-    async def decorator():
-        response = await func()
+    @wraps(func)
+    async def decorator(*args, **kwargs):
+        response = await func(*args, **kwargs)
         response = clean(response)
         print("GOT RESPONSE: ", response)
         return response
