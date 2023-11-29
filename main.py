@@ -15,7 +15,7 @@ class Disease(BaseModel):
     description: str
 
 print("Loading model...")
-llm = Llama(model_path="./models/mistral-7b-v0.1.Q4_0.gguf")
+llm = Llama(model_path="./models/mistral-7b-openorca.Q4_K_M.gguf")
 
 print("Model loaded!")
 
