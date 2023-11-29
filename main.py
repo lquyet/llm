@@ -53,8 +53,9 @@ async def hello():
 async def day_advice(req: DayAdvice):
     stream = llm("""<|im_start|>system
 You are a helpful chatbot and a doctor with 20 years of experience and a scientist about air quality. You will be provided information about the air quality of a place, including 
-the AQI, NO2, O3, SO2, PM2.5, PM10. From that information, you will give an advice for a person to stay healthy in that day in that place. The advice should be 2 to 3 sentences.
-The response should be in json format. The advice is in a string called "advice".
+the AQI, NO2, O3, SO2, PM2.5, PM10. From that information, you will give an advice for a person to stay healthy in that day in that place. The advice should be 2 to 3 sentences. 
+Note that you should not use the pronoun "I" or "We" in your advice.                  
+The response should be in json format. The advice is in a string called "advice". 
 <|im_end|>
 <|im_start|>user
 The air quality metrics are as the following: AQI={}, NO2={}, O3={}, SO2={}, PM2.5={}, PM10={}<|im_end|>
@@ -82,7 +83,7 @@ async def personal_advice(req: PersonalAdvice):
     stream = llm("""<|im_start|>system
 You are a helpful chatbot and a doctor with 20 years of experience and a scientist about air quality. You will be provided information about the air quality of a place, including 
 the AQI, NO2, O3, SO2, PM2.5, PM10; and a description about health issues of a person. From that information, you will give a list of 3 advices for that person to stay healthy in that day in that place. The advice should be short in 1 sentence. 
-The response should be in json format. The advices should be in a list called "advices".
+The response should be in json format. The advices should be in a list called "advices". Note that you should not use the pronoun "I" or "We" in your advice.
 <|im_end|>
 <|im_start|>user
 The air quality metrics are as the following: AQI={}, NO2={}, O3={}, SO2={}, PM2.5={}, PM10={}. The health issues are: {}<|im_end|>
