@@ -72,8 +72,7 @@ The response should be in json format. The advice is in a string called "advice"
 The air quality metrics are as the following: AQI={}, NO2={}, O3={}, SO2={}, PM2.5={}, PM10={}<|im_end|>
 <|im_start|>assistant""".format(req.aqi, req.no2, req.o3, req.so2, req.pm2_5, req.pm10), max_tokens=500,  stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
-    raw = result['choices'][0]['text']
-    return json.loads(raw)
+    return result['choices'][0]['text']
 
 @app.post("/predict/disease")
 @logging
@@ -87,8 +86,7 @@ Here is the paragraph to extract information from: {}<|im_end|>
 <|im_start|>assistant""".format(req.description)
     stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
-    raw = result['choices'][0]['text']
-    return json.loads(raw)
+    return result['choices'][0]['text']
 
 @app.post("/personal/advice")
 @logging
@@ -102,5 +100,4 @@ The response should be in json format. The advices should be in a list called "a
 The air quality metrics are as the following: AQI={}, NO2={}, O3={}, SO2={}, PM2.5={}, PM10={}. The health issues are: {}<|im_end|>
 <|im_start|>assistant""".format(req.aqi, req.no2, req.o3, req.so2, req.pm2_5, req.pm10, req.description), max_tokens=500,  stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
-    raw = result['choices'][0]['text']
-    return json.loads(raw)
+    return result['choices'][0]['text']
