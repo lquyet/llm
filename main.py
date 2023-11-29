@@ -80,7 +80,7 @@ The response should be in json format. The advices should be in a list called "a
 <|im_end|>
 <|im_start|>user
 The air quality metrics are as the following: AQI={}, NO2={}, O3={}, SO2={}, PM2.5={}, PM10={}. The health issues are: {}<|im_end|>
-<|im_start|>assistant""".format(input.aqi, input.no2, input.o3, input.so2, input.pm2_5, input.pm10), max_tokens=500,  stop=["<|im_end|>"], stream=False)
+<|im_start|>assistant""".format(input.aqi, input.no2, input.o3, input.so2, input.pm2_5, input.pm10, input.description), max_tokens=500,  stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
     raw = clean(result['choices'][0]['text'])
     return json.loads(raw)
