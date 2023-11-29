@@ -5,6 +5,8 @@
 # pylint: disable=trailing-newlines
 # pylint: disable=trailing-whitespace
 # pylint: disable=missing-final-newline
+# pylint: disable=line-too-long
+# pylint: disable=consider-using-f-string
 import copy
 import json
 from fastapi import FastAPI
