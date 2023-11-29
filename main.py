@@ -9,10 +9,10 @@
 # pylint: disable=consider-using-f-string
 import copy
 import json
+from functools import wraps
 from fastapi import FastAPI
 from llama_cpp import Llama
 from pydantic import BaseModel
-from functools import wraps
 
 class DayAdvice(BaseModel):
     no2: str
