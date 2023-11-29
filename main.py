@@ -38,6 +38,14 @@ llm = Llama(model_path="./models/mistral-7b-openorca.Q4_K_M.gguf", n_gpu_layers=
 
 print("Model loaded!")
 
+def logging(func):
+    async def decorator():
+        response = await func()
+        response = clean(response)
+        print("GOT RESPONSE: ", response)
+        return response
+    return decorator
+
 def clean(text):
     text = text.replace("\n", "")
     text = text.replace("\\", "")
@@ -50,6 +58,7 @@ async def hello():
     return {"hello": "world"}
 
 @app.post("/day/advice")
+@logging
 async def day_advice(req: DayAdvice):
     stream = llm("""<|im_start|>system
 You are a helpful chatbot and a doctor with 20 years of experience and a scientist about air quality. You will be provided information about the air quality of a place, including 
@@ -61,10 +70,11 @@ The response should be in json format. The advice is in a string called "advice"
 The air quality metrics are as the following: AQI={}, NO2={}, O3={}, SO2={}, PM2.5={}, PM10={}<|im_end|>
 <|im_start|>assistant""".format(req.aqi, req.no2, req.o3, req.so2, req.pm2_5, req.pm10), max_tokens=500,  stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
-    raw = clean(result['choices'][0]['text'])
+    raw = result['choices'][0]['text']
     return json.loads(raw)
 
 @app.post("/predict/disease")
+@logging
 async def predict_disease(req: Disease):
     template = """<|im_start|>system
 You are a helpful chatbot and a doctor with 20 years of experience. You will be provided a paragraph describing health issues of a person. From that paragraph, extract the list of diseases that person has. 
@@ -75,10 +85,11 @@ Here is the paragraph to extract information from: {}<|im_end|>
 <|im_start|>assistant""".format(req.description)
     stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
-    raw = clean(result['choices'][0]['text'])
+    raw = result['choices'][0]['text']
     return json.loads(raw)
 
 @app.post("/personal/advice")
+@logging
 async def personal_advice(req: PersonalAdvice):
     stream = llm("""<|im_start|>system
 You are a helpful chatbot and a doctor with 20 years of experience and a scientist about air quality. You will be provided information about the air quality of a place, including 
@@ -89,5 +100,5 @@ The response should be in json format. The advices should be in a list called "a
 The air quality metrics are as the following: AQI={}, NO2={}, O3={}, SO2={}, PM2.5={}, PM10={}. The health issues are: {}<|im_end|>
 <|im_start|>assistant""".format(req.aqi, req.no2, req.o3, req.so2, req.pm2_5, req.pm10, req.description), max_tokens=500,  stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
-    raw = clean(result['choices'][0]['text'])
+    raw = result['choices'][0]['text']
     return json.loads(raw)
