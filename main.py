@@ -107,7 +107,6 @@ The air quality metrics are as the following: AQI={}, NO2={}, O3={}, SO2={}, PM2
     return result['choices'][0]['text']
 
 @app.post("/predict/general")
-@logging
 async def predict_general(req: Prompt):
     stream = llm("""<|im_start|>system
 {}  
