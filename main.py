@@ -34,6 +34,10 @@ class PersonalAdvice(BaseModel):
 class Disease(BaseModel):
     description: str
 
+class Prompt(BaseModel):
+    system_promt: str
+    user_promt: str
+
 print("Loading model...")
 llm = Llama(model_path="./models/mistral-7b-openorca.Q4_K_M.gguf", n_gpu_layers=50, n_ctx=4096)
 
@@ -101,3 +105,16 @@ The air quality metrics are as the following: AQI={}, NO2={}, O3={}, SO2={}, PM2
 <|im_start|>assistant""".format(req.aqi, req.no2, req.o3, req.so2, req.pm2_5, req.pm10, req.description), max_tokens=500,  stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
     return result['choices'][0]['text']
+
+@app.post("/predict/general")
+@logging
+async def predict_general(req: Prompt):
+    stream = llm("""<|im_start|>system
+{}  
+<|im_end|>
+<|im_start|>user
+{}<|im_end|>
+<|im_start|>assistant""".format(req.system_promt, req.user_promt), max_tokens=500,  stop=["<|im_end|>"], stream=False)
+    result = copy.deepcopy(stream)
+    return result['choices'][0]['text']
+    
