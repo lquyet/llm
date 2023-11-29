@@ -1,8 +1,12 @@
+# pylint: disable=missing-module-docstring
+# pylint: disable=missing-class-docstring
+# pylint: disable=missing-function-docstring
+# pylint: disable=invalid-name
+# pylint: disable=trailing-newlines
+# pylint: disable=trailing-whitespace
+# pylint: disable=missing-final-newline
 import copy
-import asyncio
-import requests
 import json
-
 from fastapi import FastAPI
 from llama_cpp import Llama
 from pydantic import BaseModel
