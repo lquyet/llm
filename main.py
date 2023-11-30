@@ -14,6 +14,8 @@ from fastapi import FastAPI
 from llama_cpp import Llama
 from pydantic import BaseModel
 
+MAX_RETRY = 5
+
 class DayAdvice(BaseModel):
     no2: str
     o3: str
@@ -47,9 +49,8 @@ def logging(func):
     @wraps(func)
     async def decorator(*args, **kwargs):
         response = await func(*args, **kwargs)
-        response = clean(response)
         print("GOT RESPONSE: ", response)
-        return json.loads(response)
+        return response
     return decorator
 
 def clean(text):
@@ -66,14 +67,30 @@ async def hello():
 @app.post("/day/advice")
 @logging
 async def day_advice(req: DayAdvice):
-    stream = llm("""<|im_start|>system
+    template = """<|im_start|>system
 CONTEXT: You are a virtual assistant designed to provide personalized advice to individuals based on current Air Quality Index (AQI) metrics. Users will input the AQI values for specific pollutants, and your role is to analyze these values and offer actionable guidance. INPUT: Users will provide AQI values for key pollutants such as NO2, O3, SO2, PM2.5, and PM10, along with the overall AQI. DESIRED OUTPUT: Your responses should briefly assess the overall air quality based on the provided AQI values. Offer practical advice tailored to the current air quality situation. This may include recommendations for outdoor activities, indoor precautions, or health considerations. The advice should be 2 to 3 sentences. Note that you should not use the pronoun \"I\" or \"We\" in your advice. The response should be in json format. The advice is in a string called "advice". 
 <|im_end|>
 <|im_start|>user
 The air quality metrics are as the following: AQI={}, NO2={}, O3={}, SO2={}, PM2.5={}, PM10={}<|im_end|>
-<|im_start|>assistant""".format(req.aqi, req.no2, req.o3, req.so2, req.pm2_5, req.pm10), max_tokens=500,  stop=["<|im_end|>"], stream=False)
+<|im_start|>assistant""".format(req.aqi, req.no2, req.o3, req.so2, req.pm2_5, req.pm10)
+    stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
-    return result['choices'][0]['text']
+    retry = 0
+    response = None
+    while retry < MAX_RETRY:
+        try:
+            response = json.loads(clean(result['choices'][0]['text']))
+            if len(response) > 1 or "advice" not in response:
+                raise ValueError("Wrong format: more than 1 advice object in list")
+            break
+        except ValueError as e:
+            print("Error: ", e)
+            retry += 1
+            stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
+            result = copy.deepcopy(stream)
+            continue
+
+    return response
 
 @app.post("/predict/disease")
 @logging
@@ -87,19 +104,50 @@ Here is the paragraph to extract information from: {}<|im_end|>
 <|im_start|>assistant""".format(req.description)
     stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
-    return result['choices'][0]['text']
+    retry = 0
+    response = None
+    while retry < MAX_RETRY:
+        try:
+            response = json.loads(clean(result['choices'][0]['text']))
+            if len(response) > 1 or "diseases" not in response:
+                raise ValueError("Wrong format: more than 1 diseases object in list")
+            break
+        except ValueError as e:
+            print("Error: ", e)
+            retry += 1
+            stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
+            result = copy.deepcopy(stream)
+            continue
+
+    return response
 
 @app.post("/personal/advice")
 @logging
 async def personal_advice(req: PersonalAdvice):
-    stream = llm("""<|im_start|>system
+    template = """<|im_start|>system
 CONTEXT: You are a virtual assistant designed to offer tailored advice based on Air Quality Index (AQI) metrics for individuals with specific health conditions. Users will input their current health issues along with AQI values for key pollutants. Your role is to analyze these factors and provide personalized guidance. INPUT: Users will provide a brief description of the user's current health issues or pre-existing conditions; and AQI values for key pollutants (NO2, O3, SO2, PM2.5, PM10) and the overall AQI. DESIRED OUTPUT: Your response should include the assess the impact of the current air quality on the specified health condition; offer specific advice based on the user's health issues. This may include recommendations for activities, precautions, or environmental adjustments; and provide relevant facts or insights about how different pollutants can affect individuals with the specified health condition. Note that you should not use the pronoun \"I\" or \"We\" in your advice. The response should be in json format. The advices are in a list called \"advices\",where each advice is a string and be an element of that list. The json response should only have 1 element is the advices list and nothing else.
 <|im_end|>
 <|im_start|>user
 The air quality metrics are as the following: AQI={}, NO2={}, O3={}, SO2={}, PM2.5={}, PM10={}. The health issues are: {}<|im_end|>
-<|im_start|>assistant""".format(req.aqi, req.no2, req.o3, req.so2, req.pm2_5, req.pm10, req.description), max_tokens=500,  stop=["<|im_end|>"], stream=False)
+<|im_start|>assistant""".format(req.aqi, req.no2, req.o3, req.so2, req.pm2_5, req.pm10, req.description)
+    stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
-    return result['choices'][0]['text']
+    retry = 0
+    response = None
+    while retry < MAX_RETRY:
+        try:
+            response = json.loads(clean(result['choices'][0]['text']))
+            if len(response) > 1 or "advices" not in response:
+                raise ValueError("Wrong format: should be a list or not contain advices key")
+            break
+        except ValueError as e:
+            print("Error: ", e)
+            retry += 1
+            stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
+            result = copy.deepcopy(stream)
+            continue
+
+    return response
 
 @app.post("/predict/general")
 async def predict_general(req: Prompt):
