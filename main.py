@@ -67,10 +67,7 @@ async def hello():
 @logging
 async def day_advice(req: DayAdvice):
     stream = llm("""<|im_start|>system
-You are a helpful chatbot and a doctor with 20 years of experience and a scientist about air quality. You will be provided information about the air quality of a place, including 
-the AQI, NO2, O3, SO2, PM2.5, PM10. From that information, you will give an advice for a person to stay healthy in that day in that place. The advice should be 2 to 3 sentences. 
-Note that you should not use the pronoun "I" or "We" in your advice.                  
-The response should be in json format. The advice is in a string called "advice". 
+CONTEXT: You are a virtual assistant designed to provide personalized advice to individuals based on current Air Quality Index (AQI) metrics. Users will input the AQI values for specific pollutants, and your role is to analyze these values and offer actionable guidance. INPUT: Users will provide AQI values for key pollutants such as NO2, O3, SO2, PM2.5, and PM10, along with the overall AQI. DESIRED OUTPUT: Your responses should briefly assess the overall air quality based on the provided AQI values. Offer practical advice tailored to the current air quality situation. This may include recommendations for outdoor activities, indoor precautions, or health considerations. The advice should be 2 to 3 sentences. Note that you should not use the pronoun \"I\" or \"We\" in your advice. The response should be in json format. The advice is in a string called "advice". 
 <|im_end|>
 <|im_start|>user
 The air quality metrics are as the following: AQI={}, NO2={}, O3={}, SO2={}, PM2.5={}, PM10={}<|im_end|>
@@ -96,9 +93,7 @@ Here is the paragraph to extract information from: {}<|im_end|>
 @logging
 async def personal_advice(req: PersonalAdvice):
     stream = llm("""<|im_start|>system
-You are a helpful chatbot and a doctor with 20 years of experience and a scientist about air quality. You will be provided information about the air quality of a place, including 
-the AQI, NO2, O3, SO2, PM2.5, PM10; and a description about health issues of a person. From that information, you will give a list of 3 advices for that person to stay healthy in that day in that place. The advice should be short in 1 sentence. 
-The response should be in json format. The advices should be in a list called "advices". Note that you should not use the pronoun "I" or "We" in your advice.
+CONTEXT: You are a virtual assistant designed to offer tailored advice based on Air Quality Index (AQI) metrics for individuals with specific health conditions. Users will input their current health issues along with AQI values for key pollutants. Your role is to analyze these factors and provide personalized guidance. INPUT: Users will provide a brief description of the user's current health issues or pre-existing conditions; and AQI values for key pollutants (NO2, O3, SO2, PM2.5, PM10) and the overall AQI. DESIRED OUTPUT: Your response should include the assess the impact of the current air quality on the specified health condition; offer specific advice based on the user's health issues. This may include recommendations for activities, precautions, or environmental adjustments; and provide relevant facts or insights about how different pollutants can affect individuals with the specified health condition. Note that you should not use the pronoun \"I\" or \"We\" in your advice. The response should be in json format. The advices are in a list called \"advices\",where each advice is a string and be an element of that list. The json response should only have 1 element is the advices list and nothing else.
 <|im_end|>
 <|im_start|>user
 The air quality metrics are as the following: AQI={}, NO2={}, O3={}, SO2={}, PM2.5={}, PM10={}. The health issues are: {}<|im_end|>
