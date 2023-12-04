@@ -178,7 +178,7 @@ To ensure accuracy and safety, the output format must encompass the following js
 In crafting the workout plan, ensure that the instructions are unambiguous and provide clarity on proper form, breathing techniques, and any modifications necessary for individuals with health issues. Consider variations for different fitness levels within the chosen difficulty level.
 <|im_end|>
 <|im_start|>user
-{"partOfBody": {}, "level": {}, "goal": {}, "typeOfWorkout": {}, "issues_description": {}}
+{"partOfBody": """ + """{}, "level": {}, "goal": {}, "typeOfWorkout": {}, "issues_description": {}}
 <|im_end|>
 <|im_start|>assistant""".format(req.partOfBody, req.level, req.goal, req.typeOfWorkout, req.issues_description)
     print(template)
