@@ -172,42 +172,16 @@ async def predict_general(req: Prompt):
 async def generate_workout(req: WorkoutGenerator):
     template = """<|im_start|>system
 Develop a comprehensive and tailored workout plan catering to individuals with specific health issues. Prioritize safety by implementing clear instructions and guidelines. The input will adhere to the following json template:
-{
-  "partOfBody": "[part of the body to work on]",
-  "level": "[difficulty of the workout: beginner, medium, advanced]",
-  "goal": "[lose weight, gain muscle, improve stamina]",
-  "typeOfWorkout": "[cardio, strength training, yoga, stretching]",
-  "issues_description": "[text describing user's health issues]"
-}
+{"partOfBody": "[part of the body to work on]", "level": "[difficulty of the workout: beginner, medium, advanced]", "goal": "[lose weight, gain muscle, improve stamina]", "typeOfWorkout": "[cardio, strength training, yoga, stretching]", "issues_description": "[text describing user's health issues]"}
 To ensure accuracy and safety, the output format must encompass the following json details response. Workout plans should be tailored to the user's health issues and fitness level. The workout plan should be in a list called "workoutPlan", where each element is a json object with the following format:
-{
-"workoutPlan": [{
-  "id": "[unique identifier]",
-  "name": "[exercise name]",
-  "force": "[push or pull]",
-  "level": "[beginner, medium, advanced]",
-  "mechanic": "[compound or isolation]",
-  "equipment": "[required equipment]",
-  "primaryMuscles": ["[primary muscle worked]"],
-  "secondaryMuscles": ["[secondary muscles worked]"],
-  "instructions": [
-    "[clear and detailed step-by-step instructions for the exercise]"
-  ],
-  "category": "[cardio, strength, yoga, stretching]"
-}]
-}
+{"workoutPlan": [{"id": "[unique identifier]", "name": "[exercise name]", "force": "[push or pull]", "level": "[beginner, medium, advanced]", "mechanic": "[compound or isolation]", "equipment": "[required equipment]", "primaryMuscles": ["[primary muscle worked]"], "secondaryMuscles": ["[secondary muscles worked]"], "instructions": ["[clear and detailed step-by-step instructions for the exercise]"], "category": "[cardio, strength, yoga, stretching]"}]}
 In crafting the workout plan, ensure that the instructions are unambiguous and provide clarity on proper form, breathing techniques, and any modifications necessary for individuals with health issues. Consider variations for different fitness levels within the chosen difficulty level.
 <|im_end|>
 <|im_start|>user
-{
-    "partOfBody": {},
-    "level": {},
-    "goal": {},
-    "typeOfWorkout": {},
-    "issues_description": {}
-}
+{"partOfBody": {}, "level": {}, "goal": {}, "typeOfWorkout": {}, "issues_description": {}}
 <|im_end|>
 <|im_start|>assistant""".format(req.partOfBody, req.level, req.goal, req.typeOfWorkout, req.issues_description)
+    print(template)
     stream = llm(template, max_tokens=1024,  stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
     retry = 0
