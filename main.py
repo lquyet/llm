@@ -181,7 +181,7 @@ In crafting the workout plan, ensure that the instructions are unambiguous and p
 <|im_start|>user
 {"partOfBody": """ + formatted + """}
 <|im_end|>
-<|im_start|>assistant""".format(req.partOfBody, req.level, req.goal, req.typeOfWorkout, req.issues_description)
+<|im_start|>assistant"""
     print(template)
     stream = llm(template, max_tokens=1024,  stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
