@@ -16,6 +16,22 @@ from pydantic import BaseModel
 
 MAX_RETRY = 5
 
+class WorkoutGenerator(BaseModel):
+    partOfBody: str
+    level: str
+    goal: str
+    typeOfWorkout: str
+    issues_description: str
+
+    def json(self):
+        return json.dumps({
+            "partOfBody": self.partOfBody,
+            "level": self.level,
+            "goal": self.goal,
+            "typeOfWorkout": self.typeOfWorkout,
+            "issues_description": self.issues_description
+        })
+
 class DayAdvice(BaseModel):
     no2: str
     o3: str
@@ -159,4 +175,55 @@ async def predict_general(req: Prompt):
 <|im_start|>assistant""".format(req.system_promt, req.user_promt), max_tokens=500,  stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
     return result['choices'][0]['text']
-    
+
+@app.post("/generate/workout")
+async def generate_workout(req: WorkoutGenerator):
+    template = """<|im_start|>system
+Develop a comprehensive and tailored workout plan catering to individuals with specific health issues. Prioritize safety by implementing clear instructions and guidelines. The input will adhere to the following json template:
+{
+  "partOfBody": "[part of the body to work on]",
+  "level": "[difficulty of the workout: beginner, medium, advanced]",
+  "goal": "[lose weight, gain muscle, improve stamina]",
+  "typeOfWorkout": "[cardio, strength training, yoga, stretching]",
+  "issues_description": "[text describing user's health issues]"
+}
+To ensure accuracy and safety, the output format must encompass the following json details response. Workout plans should be tailored to the user's health issues and fitness level. The workout plan should be in a list called "workoutPlan", where each element is a json object with the following format:
+{
+"workoutPlan": [{
+  "id": "[unique identifier]",
+  "name": "[exercise name]",
+  "force": "[push or pull]",
+  "level": "[beginner, medium, advanced]",
+  "mechanic": "[compound or isolation]",
+  "equipment": "[required equipment]",
+  "primaryMuscles": ["[primary muscle worked]"],
+  "secondaryMuscles": ["[secondary muscles worked]"],
+  "instructions": [
+    "[clear and detailed step-by-step instructions for the exercise]"
+  ],
+  "category": "[cardio, strength, yoga, stretching]"
+}]
+}
+In crafting the workout plan, ensure that the instructions are unambiguous and provide clarity on proper form, breathing techniques, and any modifications necessary for individuals with health issues. Consider variations for different fitness levels within the chosen difficulty level.
+<|im_end|>
+<|im_start|>user
+{}<|im_end|>
+<|im_start|>assistant""".format(req.json())
+    stream = llm(template, max_tokens=1024,  stop=["<|im_end|>"], stream=False)
+    result = copy.deepcopy(stream)
+    retry = 0
+    response = None
+    while retry < MAX_RETRY:
+        try:
+            response = json.loads(clean(result['choices'][0]['text']))
+            if len(response) > 1 or "workoutPlan" not in response:
+                raise ValueError("Wrong format: more than 1 workoutPlan object in list")
+            break
+        except ValueError as e:
+            print("Error: ", e)
+            retry += 1
+            stream = llm(template, max_tokens=1024,  stop=["<|im_end|>"], stream=False)
+            result = copy.deepcopy(stream)
+            continue
+
+    return response
