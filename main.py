@@ -25,29 +25,6 @@ class WorkoutGenerator(BaseModel):
     issues_description: str
 
 
-class DayAdvice(BaseModel):
-    no2: str
-    o3: str
-    so2: str
-    pm2_5: str
-    pm10: str
-    aqi: str
-
-
-class PersonalAdvice(BaseModel):
-    description: str
-    no2: str
-    o3: str
-    so2: str
-    pm2_5: str
-    pm10: str
-    aqi: str
-
-
-class Disease(BaseModel):
-    description: str
-
-
 class Prompt(BaseModel):
     system_promt: str
     user_promt: str
