@@ -234,11 +234,9 @@ In crafting the workout plan, ensure that the instructions are unambiguous and p
 
     return response
 
-
 @app.post("/mock/workout")
-async def mock_general(req: Prompt):
-    return """
-    {
+async def mock_general(req: WorkoutGenerator):
+    workout_plan_data = {
         "workoutPlan": [
             {
                 "id": 1,
@@ -247,15 +245,9 @@ async def mock_general(req: Prompt):
                 "level": "beginner",
                 "mechanic": "isolation",
                 "equipment": "",
-                "primaryMuscles": [
-                    "upper back",
-                    "abdominal"
-                ],
-                "secondaryMuscles": [
-                    "glutes",
-                    "hamstrings"
-                ],
-                "instructions": "Start by lying on your stomach with your legs straight and feet flexed. Place your hands under your shoulders, fingers facing forward. As you inhale, slowly lift your head, chest, and legs off the floor while keeping your pelvis grounded. Keep your chin slightly tucked and gaze forward. Hold for 5-10 breaths, then release."
+                "primaryMuscles": ["upper back", "abdominal"],
+                "secondaryMuscles": ["glutes", "hamstrings"],
+                "instructions": "Start by lying on your stomach with your legs straight and feet flexed. Place your hands under your shoulders, fingers facing forward. As you inhale, slowly lift your head, chest, and legs off the floor while keeping your pelvis grounded. Keep your chin slightly tucked and gaze forward. Hold for 5-10 breaths, then release.",
             },
             {
                 "id": 2,
@@ -264,15 +256,9 @@ async def mock_general(req: Prompt):
                 "level": "beginner",
                 "mechanic": "isolation",
                 "equipment": "",
-                "primaryMuscles": [
-                    "upper back",
-                    "shoulders"
-                ],
-                "secondaryMuscles": [
-                    "glutes",
-                    "hamstrings"
-                ],
-                "instructions": "Start on your hands and knees with your wrists directly under your shoulders and knees hip-width apart. Spread your fingers wide, press down through your palms, and lift your hips up and back toward the ceiling. Engage your quadriceps and keep a slight bend in your knees. Keep your head relaxed, and gaze slightly towards your navel. Hold for 5-10 breaths, then release."
+                "primaryMuscles": ["upper back", "shoulders"],
+                "secondaryMuscles": ["glutes", "hamstrings"],
+                "instructions": "Start on your hands and knees with your wrists directly under your shoulders and knees hip-width apart. Spread your fingers wide, press down through your palms, and lift your hips up and back toward the ceiling. Engage your quadriceps and keep a slight bend in your knees. Keep your head relaxed, and gaze slightly towards your navel. Hold for 5-10 breaths, then release.",
             },
             {
                 "id": 3,
@@ -281,16 +267,11 @@ async def mock_general(req: Prompt):
                 "level": "beginner",
                 "mechanic": "isolation",
                 "equipment": "",
-                "primaryMuscles": [
-                    "upper back",
-                    "abdominal"
-                ],
-                "secondaryMuscles": [
-                    "glutes",
-                    "hamstrings"
-                ],
-                "instructions": "Start on your hands and knees with your wrists directly under your shoulders and knees hip-width apart. Inhale as you drop your belly toward the mat, gazing up towards your hands. Exhale as you round your spine, pulling your navel towards your spine and looking up at the ceiling. Hold for 5-10 breaths, then release."
-            }
+                "primaryMuscles": ["upper back", "abdominal"],
+                "secondaryMuscles": ["glutes", "hamstrings"],
+                "instructions": "Start on your hands and knees with your wrists directly under your shoulders and knees hip-width apart. Inhale as you drop your belly toward the mat, gazing up towards your hands. Exhale as you round your spine, pulling your navel towards your spine and looking up at the ceiling. Hold for 5-10 breaths, then release.",
+            },
         ]
     }
-    """
+
+    return workout_plan_data
