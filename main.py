@@ -16,6 +16,7 @@ from pydantic import BaseModel
 
 MAX_RETRY = 5
 
+
 class WorkoutGenerator(BaseModel):
     partOfBody: str
     level: str
@@ -32,6 +33,7 @@ class DayAdvice(BaseModel):
     pm10: str
     aqi: str
 
+
 class PersonalAdvice(BaseModel):
     description: str
     no2: str
@@ -41,17 +43,23 @@ class PersonalAdvice(BaseModel):
     pm10: str
     aqi: str
 
+
 class Disease(BaseModel):
     description: str
+
 
 class Prompt(BaseModel):
     system_promt: str
     user_promt: str
 
+
 print("Loading model...")
-llm = Llama(model_path="./models/mistral-7b-openorca.Q4_K_M.gguf", n_gpu_layers=50, n_ctx=4096)
+llm = Llama(
+    model_path="./models/mistral-7b-openorca.Q4_K_M.gguf", n_gpu_layers=50, n_ctx=4096
+)
 
 print("Model loaded!")
+
 
 def logging(func):
     @wraps(func)
@@ -59,18 +67,23 @@ def logging(func):
         response = await func(*args, **kwargs)
         print("GOT RESPONSE: ", response)
         return response
+
     return decorator
+
 
 def clean(text):
     text = text.replace("\n", "")
     text = text.replace("\\", "")
     return text
 
+
 app = FastAPI()
+
 
 @app.get("/")
 async def hello():
     return {"hello": "world"}
+
 
 @app.post("/day/advice")
 @logging
@@ -81,24 +94,25 @@ CONTEXT: You are a virtual assistant designed to provide personalized advice to 
 <|im_start|>user
 The air quality metrics are as the following: AQI={}, NO2={}, O3={}, SO2={}, PM2.5={}, PM10={}<|im_end|>
 <|im_start|>assistant""".format(req.aqi, req.no2, req.o3, req.so2, req.pm2_5, req.pm10)
-    stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
+    stream = llm(template, max_tokens=500, stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
     retry = 0
     response = None
     while retry < MAX_RETRY:
         try:
-            response = json.loads(clean(result['choices'][0]['text']))
+            response = json.loads(clean(result["choices"][0]["text"]))
             if len(response) > 1 or "advice" not in response:
                 raise ValueError("Wrong format: more than 1 advice object in list")
             break
         except ValueError as e:
             print("Error: ", e)
             retry += 1
-            stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
+            stream = llm(template, max_tokens=500, stop=["<|im_end|>"], stream=False)
             result = copy.deepcopy(stream)
             continue
 
     return response
+
 
 @app.post("/predict/disease")
 @logging
@@ -110,24 +124,25 @@ The response should be in json format. The disease(s) should be in a list called
 <|im_start|>user
 Here is the paragraph to extract information from: {}<|im_end|>
 <|im_start|>assistant""".format(req.description)
-    stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
+    stream = llm(template, max_tokens=500, stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
     retry = 0
     response = None
     while retry < MAX_RETRY:
         try:
-            response = json.loads(clean(result['choices'][0]['text']))
+            response = json.loads(clean(result["choices"][0]["text"]))
             if len(response) > 1 or "diseases" not in response:
                 raise ValueError("Wrong format: more than 1 diseases object in list")
             break
         except ValueError as e:
             print("Error: ", e)
             retry += 1
-            stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
+            stream = llm(template, max_tokens=500, stop=["<|im_end|>"], stream=False)
             result = copy.deepcopy(stream)
             continue
 
     return response
+
 
 @app.post("/personal/advice")
 @logging
@@ -137,41 +152,55 @@ CONTEXT: You are a virtual assistant designed to offer tailored advice based on 
 <|im_end|>
 <|im_start|>user
 The air quality metrics are as the following: AQI={}, NO2={}, O3={}, SO2={}, PM2.5={}, PM10={}. The health issues are: {}<|im_end|>
-<|im_start|>assistant""".format(req.aqi, req.no2, req.o3, req.so2, req.pm2_5, req.pm10, req.description)
-    stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
+<|im_start|>assistant""".format(
+        req.aqi, req.no2, req.o3, req.so2, req.pm2_5, req.pm10, req.description
+    )
+    stream = llm(template, max_tokens=500, stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
     retry = 0
     response = None
     while retry < MAX_RETRY:
         try:
-            response = json.loads(clean(result['choices'][0]['text']))
+            response = json.loads(clean(result["choices"][0]["text"]))
             if len(response) > 1 or "advices" not in response:
-                raise ValueError("Wrong format: should be a list or not contain advices key")
+                raise ValueError(
+                    "Wrong format: should be a list or not contain advices key"
+                )
             break
         except ValueError as e:
             print("Error: ", e)
             retry += 1
-            stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
+            stream = llm(template, max_tokens=500, stop=["<|im_end|>"], stream=False)
             result = copy.deepcopy(stream)
             continue
 
     return response
 
+
 @app.post("/predict/general")
 async def predict_general(req: Prompt):
-    stream = llm("""<|im_start|>system
+    stream = llm(
+        """<|im_start|>system
 {}  
 <|im_end|>
 <|im_start|>user
 {}<|im_end|>
-<|im_start|>assistant""".format(req.system_promt, req.user_promt), max_tokens=500,  stop=["<|im_end|>"], stream=False)
+<|im_start|>assistant""".format(req.system_promt, req.user_promt),
+        max_tokens=500,
+        stop=["<|im_end|>"],
+        stream=False,
+    )
     result = copy.deepcopy(stream)
-    return result['choices'][0]['text']
+    return result["choices"][0]["text"]
+
 
 @app.post("/generate/workout")
 async def generate_workout(req: WorkoutGenerator):
-    formatted = """{}, "level": {}, "goal": {}, "typeOfWorkout": {}, "issues_description": {}""".format(req.partOfBody, req.level, req.goal, req.typeOfWorkout, req.issues_description)
-    template = """<|im_start|>system
+    formatted = """{}, "level": {}, "goal": {}, "typeOfWorkout": {}, "issues_description": {}""".format(
+        req.partOfBody, req.level, req.goal, req.typeOfWorkout, req.issues_description
+    )
+    template = (
+        """<|im_start|>system
 Develop a comprehensive and tailored workout plan catering to individuals with specific health issues. Prioritize safety by implementing clear instructions and guidelines. The input will adhere to the following json template:
 {"partOfBody": "[part of the body to work on]", "level": "[difficulty of the workout: beginner, medium, advanced]", "goal": "[lose weight, gain muscle, improve stamina]", "typeOfWorkout": "[cardio, strength training, yoga, stretching]", "issues_description": "[text describing user's health issues]"}
 To ensure accuracy and safety, the output format must encompass the following json details response. Workout plans should be tailored to the user's health issues and fitness level. The workout plan should be in a list called "workoutPlan", where each element is a json object with the following format:
@@ -179,25 +208,89 @@ To ensure accuracy and safety, the output format must encompass the following js
 In crafting the workout plan, ensure that the instructions are unambiguous and provide clarity on proper form, breathing techniques, and any modifications necessary for individuals with health issues. Consider variations for different fitness levels within the chosen difficulty level.
 <|im_end|>
 <|im_start|>user
-{"partOfBody": """ + formatted + """}
+{"partOfBody": """
+        + formatted
+        + """}
 <|im_end|>
 <|im_start|>assistant"""
+    )
     print(template)
-    stream = llm(template, max_tokens=1024,  stop=["<|im_end|>"], stream=False)
+    stream = llm(template, max_tokens=1024, stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
     retry = 0
     response = None
     while retry < MAX_RETRY:
         try:
-            response = json.loads(clean(result['choices'][0]['text']))
+            response = json.loads(clean(result["choices"][0]["text"]))
             if len(response) > 1 or "workoutPlan" not in response:
                 raise ValueError("Wrong format: more than 1 workoutPlan object in list")
             break
         except ValueError as e:
             print("Error: ", e)
             retry += 1
-            stream = llm(template, max_tokens=1024,  stop=["<|im_end|>"], stream=False)
+            stream = llm(template, max_tokens=1024, stop=["<|im_end|>"], stream=False)
             result = copy.deepcopy(stream)
             continue
 
     return response
+
+
+@app.post("/mock/workout")
+async def mock_general(req: Prompt):
+    return """
+    {
+        "workoutPlan": [
+            {
+                "id": 1,
+                "name": "Cobra Pose",
+                "force": "",
+                "level": "beginner",
+                "mechanic": "isolation",
+                "equipment": "",
+                "primaryMuscles": [
+                    "upper back",
+                    "abdominal"
+                ],
+                "secondaryMuscles": [
+                    "glutes",
+                    "hamstrings"
+                ],
+                "instructions": "Start by lying on your stomach with your legs straight and feet flexed. Place your hands under your shoulders, fingers facing forward. As you inhale, slowly lift your head, chest, and legs off the floor while keeping your pelvis grounded. Keep your chin slightly tucked and gaze forward. Hold for 5-10 breaths, then release."
+            },
+            {
+                "id": 2,
+                "name": "Downward Dog",
+                "force": "",
+                "level": "beginner",
+                "mechanic": "isolation",
+                "equipment": "",
+                "primaryMuscles": [
+                    "upper back",
+                    "shoulders"
+                ],
+                "secondaryMuscles": [
+                    "glutes",
+                    "hamstrings"
+                ],
+                "instructions": "Start on your hands and knees with your wrists directly under your shoulders and knees hip-width apart. Spread your fingers wide, press down through your palms, and lift your hips up and back toward the ceiling. Engage your quadriceps and keep a slight bend in your knees. Keep your head relaxed, and gaze slightly towards your navel. Hold for 5-10 breaths, then release."
+            },
+            {
+                "id": 3,
+                "name": "Cat Pose",
+                "force": "",
+                "level": "beginner",
+                "mechanic": "isolation",
+                "equipment": "",
+                "primaryMuscles": [
+                    "upper back",
+                    "abdominal"
+                ],
+                "secondaryMuscles": [
+                    "glutes",
+                    "hamstrings"
+                ],
+                "instructions": "Start on your hands and knees with your wrists directly under your shoulders and knees hip-width apart. Inhale as you drop your belly toward the mat, gazing up towards your hands. Exhale as you round your spine, pulling your navel towards your spine and looking up at the ceiling. Hold for 5-10 breaths, then release."
+            }
+        ]
+    }
+    """
