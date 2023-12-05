@@ -16,6 +16,7 @@ from pydantic import BaseModel
 
 MAX_RETRY = 5
 
+
 class WorkoutGenerator(BaseModel):
     partOfBody: str
     level: str
@@ -32,6 +33,7 @@ class DayAdvice(BaseModel):
     pm10: str
     aqi: str
 
+
 class PersonalAdvice(BaseModel):
     description: str
     no2: str
@@ -41,17 +43,23 @@ class PersonalAdvice(BaseModel):
     pm10: str
     aqi: str
 
+
 class Disease(BaseModel):
     description: str
+
 
 class Prompt(BaseModel):
     system_promt: str
     user_promt: str
 
+
 print("Loading model...")
-llm = Llama(model_path="./models/mistral-7b-openorca.Q4_K_M.gguf", n_gpu_layers=50, n_ctx=4096)
+llm = Llama(
+    model_path="./models/mistral-7b-openorca.Q4_K_M.gguf", n_gpu_layers=50, n_ctx=4096
+)
 
 print("Model loaded!")
+
 
 def logging(func):
     @wraps(func)
@@ -59,19 +67,25 @@ def logging(func):
         response = await func(*args, **kwargs)
         print("GOT RESPONSE: ", response)
         return response
+
     return decorator
+
 
 def clean(text):
     text = text.replace("\n", "")
     text = text.replace("\\", "")
     return text
 
+
 app = FastAPI()
+
 
 @app.get("/")
 async def hello():
     return {"hello": "world"}
 
+
+@app.post("/generate/recipe")
 @app.post("/day/advice")
 @logging
 async def day_advice(req: DayAdvice):
@@ -81,24 +95,25 @@ CONTEXT: You are a virtual assistant designed to provide personalized advice to 
 <|im_start|>user
 The air quality metrics are as the following: AQI={}, NO2={}, O3={}, SO2={}, PM2.5={}, PM10={}<|im_end|>
 <|im_start|>assistant""".format(req.aqi, req.no2, req.o3, req.so2, req.pm2_5, req.pm10)
-    stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
+    stream = llm(template, max_tokens=500, stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
     retry = 0
     response = None
     while retry < MAX_RETRY:
         try:
-            response = json.loads(clean(result['choices'][0]['text']))
+            response = json.loads(clean(result["choices"][0]["text"]))
             if len(response) > 1 or "advice" not in response:
                 raise ValueError("Wrong format: more than 1 advice object in list")
             break
         except ValueError as e:
             print("Error: ", e)
             retry += 1
-            stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
+            stream = llm(template, max_tokens=500, stop=["<|im_end|>"], stream=False)
             result = copy.deepcopy(stream)
             continue
 
     return response
+
 
 @app.post("/predict/disease")
 @logging
@@ -110,24 +125,25 @@ The response should be in json format. The disease(s) should be in a list called
 <|im_start|>user
 Here is the paragraph to extract information from: {}<|im_end|>
 <|im_start|>assistant""".format(req.description)
-    stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
+    stream = llm(template, max_tokens=500, stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
     retry = 0
     response = None
     while retry < MAX_RETRY:
         try:
-            response = json.loads(clean(result['choices'][0]['text']))
+            response = json.loads(clean(result["choices"][0]["text"]))
             if len(response) > 1 or "diseases" not in response:
                 raise ValueError("Wrong format: more than 1 diseases object in list")
             break
         except ValueError as e:
             print("Error: ", e)
             retry += 1
-            stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
+            stream = llm(template, max_tokens=500, stop=["<|im_end|>"], stream=False)
             result = copy.deepcopy(stream)
             continue
 
     return response
+
 
 @app.post("/personal/advice")
 @logging
@@ -137,41 +153,55 @@ CONTEXT: You are a virtual assistant designed to offer tailored advice based on 
 <|im_end|>
 <|im_start|>user
 The air quality metrics are as the following: AQI={}, NO2={}, O3={}, SO2={}, PM2.5={}, PM10={}. The health issues are: {}<|im_end|>
-<|im_start|>assistant""".format(req.aqi, req.no2, req.o3, req.so2, req.pm2_5, req.pm10, req.description)
-    stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
+<|im_start|>assistant""".format(
+        req.aqi, req.no2, req.o3, req.so2, req.pm2_5, req.pm10, req.description
+    )
+    stream = llm(template, max_tokens=500, stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
     retry = 0
     response = None
     while retry < MAX_RETRY:
         try:
-            response = json.loads(clean(result['choices'][0]['text']))
+            response = json.loads(clean(result["choices"][0]["text"]))
             if len(response) > 1 or "advices" not in response:
-                raise ValueError("Wrong format: should be a list or not contain advices key")
+                raise ValueError(
+                    "Wrong format: should be a list or not contain advices key"
+                )
             break
         except ValueError as e:
             print("Error: ", e)
             retry += 1
-            stream = llm(template, max_tokens=500,  stop=["<|im_end|>"], stream=False)
+            stream = llm(template, max_tokens=500, stop=["<|im_end|>"], stream=False)
             result = copy.deepcopy(stream)
             continue
 
     return response
 
+
 @app.post("/predict/general")
 async def predict_general(req: Prompt):
-    stream = llm("""<|im_start|>system
+    stream = llm(
+        """<|im_start|>system
 {}  
 <|im_end|>
 <|im_start|>user
 {}<|im_end|>
-<|im_start|>assistant""".format(req.system_promt, req.user_promt), max_tokens=500,  stop=["<|im_end|>"], stream=False)
+<|im_start|>assistant""".format(req.system_promt, req.user_promt),
+        max_tokens=500,
+        stop=["<|im_end|>"],
+        stream=False,
+    )
     result = copy.deepcopy(stream)
-    return result['choices'][0]['text']
+    return result["choices"][0]["text"]
+
 
 @app.post("/generate/workout")
 async def generate_workout(req: WorkoutGenerator):
-    formatted = """{}, "level": {}, "goal": {}, "typeOfWorkout": {}, "issues_description": {}""".format(req.partOfBody, req.level, req.goal, req.typeOfWorkout, req.issues_description)
-    template = """<|im_start|>system
+    formatted = """{}, "level": {}, "goal": {}, "typeOfWorkout": {}, "issues_description": {}""".format(
+        req.partOfBody, req.level, req.goal, req.typeOfWorkout, req.issues_description
+    )
+    template = (
+        """<|im_start|>system
 Develop a comprehensive and tailored workout plan catering to individuals with specific health issues. Prioritize safety by implementing clear instructions and guidelines. The input will adhere to the following json template:
 {"partOfBody": "[part of the body to work on]", "level": "[difficulty of the workout: beginner, medium, advanced]", "goal": "[lose weight, gain muscle, improve stamina]", "typeOfWorkout": "[cardio, strength training, yoga, stretching]", "issues_description": "[text describing user's health issues]"}
 To ensure accuracy and safety, the output format must encompass the following json details response. Workout plans should be tailored to the user's health issues and fitness level. The workout plan should be in a list called "workoutPlan", where each element is a json object with the following format:
@@ -179,25 +209,112 @@ To ensure accuracy and safety, the output format must encompass the following js
 In crafting the workout plan, ensure that the instructions are unambiguous and provide clarity on proper form, breathing techniques, and any modifications necessary for individuals with health issues. Consider variations for different fitness levels within the chosen difficulty level.
 <|im_end|>
 <|im_start|>user
-{"partOfBody": """ + formatted + """}
+{"partOfBody": """
+        + formatted
+        + """}
 <|im_end|>
 <|im_start|>assistant"""
+    )
     print(template)
-    stream = llm(template, max_tokens=1024,  stop=["<|im_end|>"], stream=False)
+    stream = llm(template, max_tokens=1024, stop=["<|im_end|>"], stream=False)
     result = copy.deepcopy(stream)
     retry = 0
     response = None
     while retry < MAX_RETRY:
         try:
-            response = json.loads(clean(result['choices'][0]['text']))
+            response = json.loads(clean(result["choices"][0]["text"]))
             if len(response) > 1 or "workoutPlan" not in response:
                 raise ValueError("Wrong format: more than 1 workoutPlan object in list")
             break
         except ValueError as e:
             print("Error: ", e)
             retry += 1
-            stream = llm(template, max_tokens=1024,  stop=["<|im_end|>"], stream=False)
+            stream = llm(template, max_tokens=1024, stop=["<|im_end|>"], stream=False)
             result = copy.deepcopy(stream)
             continue
 
     return response
+
+
+# This section is used to fine-tune the model using a list of tuples of prompts and responses.
+# The model is fine-tuned on the prompts and responses in the list.
+
+workout_prompts = [
+    (
+        """{"partOfBody": "[legs]", "level": "[beginner]", "goal": "[improve stamina]", "typeOfWorkout": "[strength training]", "issues_description": "[limited mobility]"}""",
+        """{
+    "workoutPlan": [
+        {
+            "id": "1",
+            "name": "Passive and Active Ankle Joint Movements",
+            "force": "[push or pull]",
+            "level": "[beginner]",
+            "mechanic": "[compound]",
+            "equipment": "[none]",
+            "primaryMuscles": ["ankle joints"],
+            "secondaryMuscles": [],
+            "instructions": [
+                "Perform passive and active movements for ankle joints."
+            ],
+            "category": "[strength]"
+        },
+        {
+            "id": "2",
+            "name": "Supine Leg Lifts",
+            "force": "[push]",
+            "level": "[beginner]",
+            "mechanic": "[compound]",
+            "equipment": "[none]",
+            "primaryMuscles": ["legs"],
+            "secondaryMuscles": [],
+            "instructions": [
+                "Lie on your back. Lift one leg at a time, then lift both legs together. Move legs from side to side."
+            ],
+            "category": "[strength]"
+        },
+        {
+            "id": "3",
+            "name": "Prone Shin Lifts",
+            "force": "[push or pull]",
+            "level": "[beginner]",
+            "mechanic": "[isolation]",
+            "equipment": "[ankle weights]",
+            "primaryMuscles": ["shin"],
+            "secondaryMuscles": [],
+            "instructions": [
+                "Lie on your stomach. Lift or lower the shin. You can add resistance by wearing ankle weights."
+            ],
+            "category": "[strength]"
+        },
+        {
+            "id": "4",
+            "name": "Resistance Training with Sandbags",
+            "force": "[push]",
+            "level": "[beginner]",
+            "mechanic": "[compound]",
+            "equipment": "[sandbags]",
+            "primaryMuscles": ["legs"],
+            "secondaryMuscles": [],
+            "instructions": [
+                "Secure sandbags to the legs for added resistance during exercises."
+            ],
+            "category": "[strength]"
+        },
+        {
+            "id": "5",
+            "name": "Wall Pushes",
+            "force": "[push]",
+            "level": "[beginner]",
+            "mechanic": "[compound]",
+            "equipment": "[wall]",
+            "primaryMuscles": ["legs"],
+            "secondaryMuscles": [],
+            "instructions": [
+                "Sit or stand and push the foot against a firm surface like a wall."
+            ],
+            "category": "[strength]"
+        }
+    ]
+}""",
+    )
+]
